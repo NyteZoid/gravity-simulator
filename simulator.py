@@ -140,13 +140,34 @@ def energy(bodies):
     return kinetic, potential, kinetic + potential
    
    
+def centerofmass(bodies):
+    totalmass = sum(b.mass for b in bodies)
+    cx = sum((b.x * b.mass) for b in bodies) / totalmass
+    cy = sum((b.y * b.mass) for b in bodies) / totalmass
+    return cx,cy
+   
+
+def angularmomentum(bodies):
+    cx,cy = centerofmass(bodies)
+    L = 0.0  
+    
+    for b in bodies:
+        rx = b.x - cx
+        ry = b.y - cy
+        L = L + b.mass * (rx * b.vy - ry * b.vx)
+        
+    return L 
+   
+   
 def drawstats(bodies):
     ke,pe,total = energy(bodies)
+    L = angularmomentum(bodies)
     lines = [
         f"Body Count       : {len(bodies)}",
         f"Kinetic Energy   : {ke:.2f}",
         f"Potential Energy : {pe:.2f}",
-        f"Total Energy     : {total:.2f}"     
+        f"Total Energy     : {total:.2f}",
+        f"Angular Momentum : {L:.2f}"    
     ]
     
     y = 10
