@@ -2,6 +2,8 @@
 
 
 import math
+import pygame
+import sys
 
 
 class Body:
@@ -52,22 +54,56 @@ def update(bodies, dt):
         
         body.x = body.x + (body.vx * dt)
         body.y = body.y + (body.vy * dt)
-        
-body1 = Body(x=-50, y=0, vx=0, vy=0.5, mass=10) 
-body2 = Body(x=50, y=0, vx=0, vy=-0.5, mass=10) 
-body3 = Body(x=0, y=100, vx=0, vy=-0.5, mass=1000) 
+    
+    
+pygame.init()
+
+width,height = 800,800
+screen = pygame.display.set_mode((width,height))
+pygame.display.set_caption("Gravity Simulator")
+
+clock = pygame.time.Clock()
+
+xcenter = width // 2
+ycenter = height // 2
+scale = 2
+
+def drawbody(body):
+    x = int(xcenter + (body.x * scale))
+    y = int(ycenter + (body.y * scale))
+    
+    radius = max(2, int(math.sqrt(body.mass)))
+    pygame.draw.circle(screen, (255,255,255), (x,y), radius)
+
+    
+body1 = Body(x=-100, y=0, vx=0, vy=0.5, mass=50) 
+body2 = Body(x=100, y=0, vx=0, vy=-0.5, mass=50) 
+body3 = Body(x=0, y=0, vx=0, vy=-0.5, mass=500)
 bodies = [body1, body2, body3]
         
 dt = 0.1
-steps = 200
 
-for step in range(steps):
+
+running = True
+while running:
+    clock.tick(60)
+    
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+            
     update(bodies, dt)
     
-    print(f"Step {step+1}")
-    for i in range(len(bodies)):
-        print(f"Body {i+1}: x={bodies[i].x:.2f}, y={bodies[i].y:.2f}, vx={bodies[i].vx:.2f}, vy={bodies[i].vy:.2f}")
-    print()
+    screen.fill((0,0,0))
     
+    for body in bodies:
+        drawbody(body)
+        
+    pygame.display.flip()
     
+
+pygame.quit()
+sys.exit()
+
+
 #end
