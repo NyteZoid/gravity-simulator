@@ -16,6 +16,8 @@ class Body:
          
         
 G = 1.0
+soft = 5.0
+cfact = 0.5
 
 def gforce(b1, b2):
     dx = b2.x - b1.x
@@ -25,7 +27,7 @@ def gforce(b1, b2):
     if dist == 0:
         return 0,0
     
-    force = G * b1.mass * b2.mass / (dist * dist)
+    force = G * b1.mass * b2.mass / ((dist * dist) + (soft * soft))
     
     fx = force * dx / dist
     fy = force * dy / dist
@@ -54,6 +56,53 @@ def update(bodies, dt):
         
         body.x = body.x + (body.vx * dt)
         body.y = body.y + (body.vy * dt)
+
+    
+def collision(bodies):
+    merged = []
+    skip = set()
+    
+    for i in range(len(bodies)):
+        if i in skip:
+            continue
+        
+        for j in range(i+1, len(bodies)):
+            if j in skip:
+                continue
+            
+            b1 = bodies[i]
+            b2 = bodies[j]
+            
+            dx = b2.x - b1.x
+            dy = b2.y - b1.y
+            dist = math.sqrt(dx * dx + dy * dy)
+            
+            r1 = cfact * math.sqrt(b1.mass)
+            r2 = cfact * math.sqrt(b2.mass)
+            
+            if dist < (r1 + r2):
+                totalmass = b1.mass + b2.mass
+                
+                newx = (b1.x * b1.mass + b2.x * b2.mass) / totalmass
+                newy = (b1.y * b1.mass + b2.y * b2.mass) / totalmass
+                
+                newvx = (b1.vx * b1.mass + b2.vx * b2.mass) / totalmass
+                newvy = (b1.vy * b1.mass + b2.vy * b2.mass) / totalmass
+                
+                mergedbody = Body(x=newx, y=newy, vx=newvx, vy=newvy, mass=totalmass)
+                
+                merged.append(mergedbody)
+                skip.add(i)
+                skip.add(j)
+                break
+    
+    newbodies = []
+    for i in range(len(bodies)):
+        if i not in skip:
+            newbodies.append(bodies[i])
+            
+    newbodies.extend(merged)
+    return newbodies
     
     
 pygame.init()
@@ -72,7 +121,7 @@ def drawbody(body):
     x = int(xcenter + (body.x * scale))
     y = int(ycenter - (body.y * scale))
     
-    radius = max(2, int(math.sqrt(body.mass)))
+    radius = max(2, int(math.sqrt(body.mass) * scale))
     pygame.draw.circle(screen, (255,255,255), (x,y), radius)
 
     
@@ -93,6 +142,7 @@ while running:
             running = False
             
     update(bodies, dt)
+    bodies = collision(bodies)
     
     screen.fill((0,0,0))
     
