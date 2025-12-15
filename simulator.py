@@ -13,11 +13,11 @@ class Body:
         self.vx = vx
         self.vy = vy
         self.mass = mass
+        self.trail = []
          
         
 G = 1.0
 soft = 5.0
-cfact = 0.5
 
 def gforce(b1, b2):
     dx = b2.x - b1.x
@@ -77,8 +77,8 @@ def collision(bodies):
             dy = b2.y - b1.y
             dist = math.sqrt(dx * dx + dy * dy)
             
-            r1 = cfact * math.sqrt(b1.mass)
-            r2 = cfact * math.sqrt(b2.mass)
+            r1 = 0.5 * math.sqrt(b1.mass)
+            r2 = 0.5 * math.sqrt(b2.mass)
             
             if dist < (r1 + r2):
                 totalmass = b1.mass + b2.mass
@@ -117,6 +117,20 @@ xcenter = width // 2
 ycenter = height // 2
 scale = 2
 
+
+def drawtrail(body):
+    if len(body.trail) < 2:
+        return
+    
+    points = []
+    for (x,y) in body.trail:
+        sx = int(xcenter + x * scale)
+        sy = int(ycenter - y * scale)
+        points.append((sx,sy))
+        
+    pygame.draw.lines(screen, (150,150,150), False, points, 1)
+
+
 def drawbody(body):
     x = int(xcenter + (body.x * scale))
     y = int(ycenter - (body.y * scale))
@@ -130,7 +144,7 @@ body2 = Body(x=100, y=0, vx=0, vy=-0.5, mass=50)
 body3 = Body(x=0, y=0, vx=0, vy=-0.5, mass=500)
 bodies = [body1, body2, body3]
         
-dt = 0.1
+dt = 0.2
 
 
 running = True
@@ -144,8 +158,15 @@ while running:
     update(bodies, dt)
     bodies = collision(bodies)
     
+    for body in bodies:
+        body.trail.append((body.x,body.y))
+        if len(body.trail) > 300:
+            body.trail.pop(0)
+            
     screen.fill((0,0,0))
     
+    for body in bodies:
+        drawtrail(body)
     for body in bodies:
         drawbody(body)
         
