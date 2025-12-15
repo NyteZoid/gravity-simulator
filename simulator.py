@@ -159,6 +159,22 @@ def angularmomentum(bodies):
     return L 
    
    
+def circularorbit(x, y, mass, central):
+    dx = x - central.x
+    dy = y - central.y
+    r = math.sqrt(dx * dx + dy * dy)
+    
+    if r == 0:
+        return None
+    
+    v = math.sqrt(G * central.mass / r)
+    
+    vx = -v * dy / r
+    vy = v * dx / r
+    
+    return Body(x=x, y=y, vx=vx, vy=vy, mass=mass)
+       
+   
 def drawstats(bodies):
     ke,pe,total = energy(bodies)
     L = angularmomentum(bodies)
@@ -227,11 +243,17 @@ def drawbody(body):
     radius = max(2, int(math.sqrt(body.mass) * scale))
     pygame.draw.circle(screen, (255,255,255), (x,y), radius)
 
-    
+'''
 body1 = Body(x=-100, y=0, vx=0, vy=0.5, mass=50) 
 body2 = Body(x=100, y=0, vx=0, vy=-0.5, mass=50) 
 body3 = Body(x=0, y=0, vx=0, vy=-0.5, mass=500)
 bodies = [body1, body2, body3]
+'''
+
+star = Body(0,0,0,0,1000)
+planet1 = circularorbit(100,0,50,star)
+planet2 = circularorbit(-100,0,10,star)
+bodies = [star, planet1, planet2]
 
 acceleration(bodies)
         
