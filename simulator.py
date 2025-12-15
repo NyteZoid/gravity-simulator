@@ -13,6 +13,8 @@ class Body:
         self.vx = vx
         self.vy = vy
         self.mass = mass
+        self.ax = 0.0
+        self.ay = 0.0
         self.trail = []
          
         
@@ -34,28 +36,38 @@ def gforce(b1, b2):
     
     return fx,fy       
  
+ 
+def acceleration(bodies):
+    for body in bodies:
+        body.ax = 0.0
+        body.ay = 0.0
+        
+    for i in range(len(bodies)):
+        for j in range(i + 1, len(bodies)):
+            b1 = bodies[i]
+            b2 = bodies[j]
+
+            fx,fy = gforce(b1,b2)
+            
+            b1.ax = b1.ax + fx / b1.mass
+            b1.ay = b1.ay + fy / b1.mass
+            b2.ax = b2.ax - fx / b2.mass
+            b2.ay = b2.ay - fy / b2.mass
+            
         
 def update(bodies, dt):
     for body in bodies:
-        fxtotal = 0
-        fytotal = 0
+        body.x = body.x + body.vx * dt + 0.5 * body.ax * dt * dt
+        body.y = body.y + body.vy * dt + 0.5 * body.ay * dt * dt
         
-        for other in bodies:
-            if body is other:
-                continue
-            
-            fx,fy = gforce(body, other)
-            fxtotal = fxtotal + fx
-            fytotal = fytotal + fy
-            
-        ax = fxtotal / body.mass
-        ay = fytotal / body.mass
-        
-        body.vx = body.vx + (ax * dt)
-        body.vy = body.vy + (ay * dt)
-        
-        body.x = body.x + (body.vx * dt)
-        body.y = body.y + (body.vy * dt)
+    oldax = [body.ax for body in bodies]
+    olday = [body.ay for body in bodies]
+    
+    acceleration(bodies)
+    
+    for i in range(len(bodies)):
+        bodies[i].vx = bodies[i].vx + 0.5 * (oldax[i] + bodies[i].ax) * dt
+        bodies[i].vy = bodies[i].vy + 0.5 * (olday[i] + bodies[i].ay) * dt
 
     
 def collision(bodies):
@@ -127,6 +139,21 @@ def energy(bodies):
                 
     return kinetic, potential, kinetic + potential
    
+   
+def drawstats(bodies):
+    ke,pe,total = energy(bodies)
+    lines = [
+        f"Body Count       : {len(bodies)}",
+        f"Kinetic Energy   : {ke:.2f}",
+        f"Potential Energy : {pe:.2f}",
+        f"Total Energy     : {total:.2f}"     
+    ]
+    
+    y = 10
+    for line in lines:
+        text = font.render(line, True, (200,200,200))
+        screen.blit(text, (10,y))
+        y = y + 20
     
 pygame.init()
 
@@ -139,6 +166,8 @@ clock = pygame.time.Clock()
 xcenter = width // 2
 ycenter = height // 2
 scale = 2
+
+font = pygame.font.SysFont("consolas", 14)
 
 
 def speedtocolour(speed, maxspeed = 5):
@@ -182,6 +211,8 @@ body1 = Body(x=-100, y=0, vx=0, vy=0.5, mass=50)
 body2 = Body(x=100, y=0, vx=0, vy=-0.5, mass=50) 
 body3 = Body(x=0, y=0, vx=0, vy=-0.5, mass=500)
 bodies = [body1, body2, body3]
+
+acceleration(bodies)
         
 dt = 0.2
 
@@ -196,10 +227,7 @@ while running:
             
     update(bodies, dt)
     bodies = collision(bodies)
-    
-    if pygame.time.get_ticks() % 500 < 20:
-        ke, pe, total = energy(bodies)
-        print(f"Kinetic Energy = {ke:.2f}, Potential Energy = {pe:.2f}, Total Energy = {total:.2f}")
+    acceleration(bodies)
     
     for body in bodies:
         body.trail.append((body.x, body.y, body.vx, body.vy))
@@ -213,6 +241,8 @@ while running:
     for body in bodies:
         drawbody(body)
         
+    drawstats(bodies)    
+    
     pygame.display.flip()
     
 
