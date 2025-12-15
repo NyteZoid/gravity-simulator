@@ -118,17 +118,33 @@ ycenter = height // 2
 scale = 2
 
 
+def speedtocolour(speed, maxspeed = 5):
+    s = min(speed / maxspeed, 1.0)
+    
+    r = int(255 * s)
+    g = int(255 * (1 - abs((2 * s) - 1)))
+    b = int(255 * (1 - s))
+    
+    return (r,g,b)
+
+
 def drawtrail(body):
     if len(body.trail) < 2:
         return
     
-    points = []
-    for (x,y) in body.trail:
-        sx = int(xcenter + x * scale)
-        sy = int(ycenter - y * scale)
-        points.append((sx,sy))
+    for i in range(len(body.trail) - 1):
+        x1,y1,vx1,vy1 = body.trail[i]
+        x2,y2,vx2,vy2 = body.trail[i+1]
         
-    pygame.draw.lines(screen, (150,150,150), False, points, 1)
+        sx1 = int(xcenter + x1 * scale)
+        sy1 = int(ycenter - y1 * scale)
+        sx2 = int(xcenter + x2 * scale)
+        sy2 = int(ycenter - y2 * scale)
+        
+        speed = math.sqrt(vx1 ** 2 + vy1 ** 2)
+        colour = speedtocolour(speed)
+        
+        pygame.draw.line(screen, colour, (sx1,sy1), (sx2,sy2), 2)
 
 
 def drawbody(body):
@@ -159,7 +175,7 @@ while running:
     bodies = collision(bodies)
     
     for body in bodies:
-        body.trail.append((body.x,body.y))
+        body.trail.append((body.x, body.y, body.vx, body.vy))
         if len(body.trail) > 300:
             body.trail.pop(0)
             
