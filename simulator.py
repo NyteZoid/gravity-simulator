@@ -174,23 +174,6 @@ def circularorbit(x, y, mass, central):
     
     return Body(x=x, y=y, vx=vx, vy=vy, mass=mass)
        
-   
-def drawstats(bodies):
-    ke,pe,total = energy(bodies)
-    L = angularmomentum(bodies)
-    lines = [
-        f"Body Count       : {len(bodies)}",
-        f"Kinetic Energy   : {ke:.2f}",
-        f"Potential Energy : {pe:.2f}",
-        f"Total Energy     : {total:.2f}",
-        f"Angular Momentum : {L:.2f}"    
-    ]
-    
-    y = 10
-    for line in lines:
-        text = font.render(line, True, (200,200,200))
-        screen.blit(text, (10,y))
-        y = y + 20
     
 pygame.init()
 
@@ -199,12 +182,17 @@ screen = pygame.display.set_mode((width,height))
 pygame.display.set_caption("Gravity Simulator")
 
 clock = pygame.time.Clock()
+font = pygame.font.SysFont("consolas", 14)
 
 xcenter = width // 2
 ycenter = height // 2
 scale = 2
 
-font = pygame.font.SysFont("consolas", 14)
+
+def screentoworld(mx, my):
+    x = (mx - xcenter) / scale
+    y = (ycenter - my) / scale
+    return x,y
 
 
 def speedtocolour(speed, maxspeed = 5):
@@ -242,6 +230,25 @@ def drawbody(body):
     
     radius = max(2, int(math.sqrt(body.mass) * scale))
     pygame.draw.circle(screen, (255,255,255), (x,y), radius)
+    
+    
+def drawstats(bodies):
+    ke,pe,total = energy(bodies)
+    L = angularmomentum(bodies)
+    lines = [
+        f"Body Count       : {len(bodies)}",
+        f"Kinetic Energy   : {ke:.2f}",
+        f"Potential Energy : {pe:.2f}",
+        f"Total Energy     : {total:.2f}",
+        f"Angular Momentum : {L:.2f}"    
+    ]
+    
+    y = 10
+    for line in lines:
+        text = font.render(line, True, (200,200,200))
+        screen.blit(text, (10,y))
+        y = y + 20
+        
 
 '''
 body1 = Body(x=-100, y=0, vx=0, vy=0.5, mass=50) 
@@ -251,12 +258,13 @@ bodies = [body1, body2, body3]
 '''
 
 star = Body(0,0,0,0,1000)
-planet1 = circularorbit(100,0,50,star)
-planet2 = circularorbit(-100,0,10,star)
+planet1 = circularorbit(75,0,10,star)
+planet2 = circularorbit(-150,0,50,star)
 bodies = [star, planet1, planet2]
 
 acceleration(bodies)
-        
+   
+selectedmass = 20     
 dt = 0.2
 
 
