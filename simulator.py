@@ -104,6 +104,29 @@ def collision(bodies):
     newbodies.extend(merged)
     return newbodies
     
+   
+def energy(bodies):
+    kinetic = 0.0
+    potential = 0.0
+    
+    for body in bodies:
+        v2 = body.vx ** 2 + body.vy ** 2
+        kinetic = kinetic + 0.5 * body.mass * v2
+        
+    for i in range(len(bodies)):
+        for j in range(i+1, len(bodies)):
+            b1 = bodies[i]
+            b2 = bodies[j]
+            
+            dx = b2.x - b1.x
+            dy = b2.y - b1.y
+            dist = math.sqrt(dx * dx + dy * dy)
+            
+            if dist != 0:
+                potential = potential - G * b1.mass * b2.mass / dist
+                
+    return kinetic, potential, kinetic + potential
+   
     
 pygame.init()
 
@@ -173,6 +196,10 @@ while running:
             
     update(bodies, dt)
     bodies = collision(bodies)
+    
+    if pygame.time.get_ticks() % 500 < 20:
+        ke, pe, total = energy(bodies)
+        print(f"Kinetic Energy = {ke:.2f}, Potential Energy = {pe:.2f}, Total Energy = {total:.2f}")
     
     for body in bodies:
         body.trail.append((body.x, body.y, body.vx, body.vy))
