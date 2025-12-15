@@ -1,11 +1,13 @@
 #start
 
 
+#imports
 import math
 import pygame
 import sys
 
 
+#body definition
 class Body:
     def __init__(self, x, y, vx, vy, mass):
         self.x = x
@@ -17,10 +19,13 @@ class Body:
         self.ay = 0.0
         self.trail = []
          
-        
+
+#constants     
 G = 1.0
 soft = 5.0
 
+
+#gravity force calculation
 def gforce(b1, b2):
     dx = b2.x - b1.x
     dy = b2.y - b1.y
@@ -36,7 +41,8 @@ def gforce(b1, b2):
     
     return fx,fy       
  
- 
+
+#acceleration calculation
 def acceleration(bodies):
     for body in bodies:
         body.ax = 0.0
@@ -49,35 +55,44 @@ def acceleration(bodies):
 
             fx,fy = gforce(b1,b2)
             
+            #update accelerations based on force
             b1.ax = b1.ax + fx / b1.mass
             b1.ay = b1.ay + fy / b1.mass
             b2.ax = b2.ax - fx / b2.mass
             b2.ay = b2.ay - fy / b2.mass
             
-        
+
+#update positions and velocities      
 def update(bodies, dt):
     for body in bodies:
+        #update positions
         body.x = body.x + body.vx * dt + 0.5 * body.ax * dt * dt
         body.y = body.y + body.vy * dt + 0.5 * body.ay * dt * dt
-        
+    
+    #store old accelerations
     oldax = [body.ax for body in bodies]
     olday = [body.ay for body in bodies]
     
     acceleration(bodies)
     
+    #update velocities
     for i in range(len(bodies)):
         bodies[i].vx = bodies[i].vx + 0.5 * (oldax[i] + bodies[i].ax) * dt
         bodies[i].vy = bodies[i].vy + 0.5 * (olday[i] + bodies[i].ay) * dt
 
-    
+
+#collision detection and merging
 def collision(bodies):
+    #list to hold merged bodies
     merged = []
+    #set to hold indices of bodies to skip
     skip = set()
     
     for i in range(len(bodies)):
+        #skip bodies that have already been merged
         if i in skip:
             continue
-        
+
         for j in range(i+1, len(bodies)):
             if j in skip:
                 continue
@@ -92,6 +107,7 @@ def collision(bodies):
             r1 = 0.5 * math.sqrt(b1.mass)
             r2 = 0.5 * math.sqrt(b2.mass)
             
+            #check for collision
             if dist < (r1 + r2):
                 totalmass = b1.mass + b2.mass
                 
@@ -101,13 +117,16 @@ def collision(bodies):
                 newvx = (b1.vx * b1.mass + b2.vx * b2.mass) / totalmass
                 newvy = (b1.vy * b1.mass + b2.vy * b2.mass) / totalmass
                 
+                #create merged body
                 mergedbody = Body(x=newx, y=newy, vx=newvx, vy=newvy, mass=totalmass)
                 
+                #add to merged list and mark indices to skip
                 merged.append(mergedbody)
                 skip.add(i)
                 skip.add(j)
                 break
     
+    #create new list of bodies excluding merged ones
     newbodies = []
     for i in range(len(bodies)):
         if i not in skip:
@@ -116,11 +135,13 @@ def collision(bodies):
     newbodies.extend(merged)
     return newbodies
     
-   
+
+#energy calculation
 def energy(bodies):
     kinetic = 0.0
     potential = 0.0
     
+    #kinetic energy
     for body in bodies:
         v2 = body.vx ** 2 + body.vy ** 2
         kinetic = kinetic + 0.5 * body.mass * v2
@@ -134,12 +155,14 @@ def energy(bodies):
             dy = b2.y - b1.y
             dist = math.sqrt(dx * dx + dy * dy)
             
+            #potential energy
             if dist != 0:
                 potential = potential - G * b1.mass * b2.mass / dist
                 
     return kinetic, potential, kinetic + potential
    
-   
+
+#center of mass calculation
 def centerofmass(bodies):
     totalmass = sum(b.mass for b in bodies)
     cx = sum((b.x * b.mass) for b in bodies) / totalmass
@@ -147,6 +170,7 @@ def centerofmass(bodies):
     return cx,cy
    
 
+#angular momentum calculation
 def angularmomentum(bodies):
     cx,cy = centerofmass(bodies)
     L = 0.0  
@@ -158,7 +182,8 @@ def angularmomentum(bodies):
         
     return L 
    
-   
+
+#create a body in circular orbit
 def circularorbit(x, y, mass, central):
     dx = x - central.x
     dy = y - central.y
@@ -169,12 +194,14 @@ def circularorbit(x, y, mass, central):
     
     v = math.sqrt(G * central.mass / r)
     
+    #velocity components perpendicular to radius vector
     vx = -v * dy / r
     vy = v * dx / r
     
     return Body(x=x, y=y, vx=vx, vy=vy, mass=mass)
        
-    
+
+#pygame setup
 pygame.init()
 
 width,height = 800,800
@@ -189,12 +216,14 @@ ycenter = height // 2
 scale = 2
 
 
+#coordinate conversion functions
 def screentoworld(mx, my):
     x = (mx - xcenter) / scale
     y = (ycenter - my) / scale
     return x,y
 
 
+#speed to colour mapping
 def speedtocolour(speed, maxspeed = 5):
     s = min(speed / maxspeed, 1.0)
     
@@ -205,6 +234,7 @@ def speedtocolour(speed, maxspeed = 5):
     return (r,g,b)
 
 
+#draw trail of a body
 def drawtrail(body):
     if len(body.trail) < 2:
         return
@@ -224,6 +254,7 @@ def drawtrail(body):
         pygame.draw.line(screen, colour, (sx1,sy1), (sx2,sy2), 2)
 
 
+#draw a body
 def drawbody(body):
     x = int(xcenter + (body.x * scale))
     y = int(ycenter - (body.y * scale))
@@ -231,7 +262,8 @@ def drawbody(body):
     radius = max(2, int(math.sqrt(body.mass) * scale))
     pygame.draw.circle(screen, (255,255,255), (x,y), radius)
     
-    
+
+#draw simulation statistics
 def drawstats(bodies):
     ke,pe,total = energy(bodies)
     L = angularmomentum(bodies)
@@ -250,13 +282,13 @@ def drawstats(bodies):
         y = y + 20
         
 
+#initial bodies setup
 '''
 body1 = Body(x=-100, y=0, vx=0, vy=0.5, mass=50) 
 body2 = Body(x=100, y=0, vx=0, vy=-0.5, mass=50) 
 body3 = Body(x=0, y=0, vx=0, vy=-0.5, mass=500)
 bodies = [body1, body2, body3]
 '''
-
 star = Body(0,0,0,0,1000)
 planet1 = circularorbit(75,0,10,star)
 planet2 = circularorbit(-150,0,50,star)
@@ -268,8 +300,10 @@ selectedmass = 20
 dt = 0.2
 
 
+#main simulation loop
 running = True
 while running:
+    #limit to 60 FPS
     clock.tick(60)
     
     for event in pygame.event.get():
@@ -280,23 +314,28 @@ while running:
     bodies = collision(bodies)
     acceleration(bodies)
     
+    #update trails
     for body in bodies:
         body.trail.append((body.x, body.y, body.vx, body.vy))
         if len(body.trail) > 300:
             body.trail.pop(0)
-            
+    
     screen.fill((0,0,0))
     
+    #draw trails and bodies
     for body in bodies:
         drawtrail(body)
     for body in bodies:
         drawbody(body)
-        
+    
+    #draw statistics
     drawstats(bodies)    
     
+    #update display
     pygame.display.flip()
     
 
+#quit Pygame
 pygame.quit()
 sys.exit()
 
