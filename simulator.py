@@ -70,7 +70,7 @@ scale = 2
 
 def drawbody(body):
     x = int(xcenter + (body.x * scale))
-    y = int(ycenter + (body.y * scale))
+    y = int(ycenter - (body.y * scale))
     
     radius = max(2, int(math.sqrt(body.mass)))
     pygame.draw.circle(screen, (255,255,255), (x,y), radius)
