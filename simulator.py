@@ -194,11 +194,17 @@ xcenter = width // 2
 ycenter = height // 2
 scale = 2
 
+zoom = 1.0
+panx = 0.0
+pany = 0.0
+drag = False
+lastmousepos = None
+
 
 #coordinate conversion functions
 def screentoworld(mx, my):
-    x = (mx - xcenter) / scale
-    y = (ycenter - my) / scale
+    x = (mx - xcenter) / (scale * zoom) + panx
+    y = (ycenter - my) / (scale * zoom) + pany
     return x,y
 
 
@@ -213,6 +219,15 @@ def speedtocolour(speed, maxspeed = 5):
     return (r,g,b)
 
 
+#draw a body
+def drawbody(body):
+    x = int(xcenter + ((body.x - panx) * scale * zoom))
+    y = int(ycenter - ((body.y - pany) * scale * zoom))
+    
+    radius = max(2, int(math.sqrt(body.mass) * scale * zoom))
+    pygame.draw.circle(screen, (255,255,255), (x,y), radius)
+    
+    
 #draw trail of a body
 def drawtrail(body):
     if len(body.trail) < 2:
@@ -222,25 +237,16 @@ def drawtrail(body):
         x1,y1,vx1,vy1 = body.trail[i]
         x2,y2,vx2,vy2 = body.trail[i+1]
         
-        sx1 = int(xcenter + x1 * scale)
-        sy1 = int(ycenter - y1 * scale)
-        sx2 = int(xcenter + x2 * scale)
-        sy2 = int(ycenter - y2 * scale)
+        sx1 = int(xcenter + (x1 - panx) * scale * zoom)
+        sy1 = int(ycenter - (y1 - pany) * scale * zoom)
+        sx2 = int(xcenter + (x2 - panx) * scale * zoom)
+        sy2 = int(ycenter - (y2 - pany) * scale * zoom)
         
         speed = math.sqrt(vx1 ** 2 + vy1 ** 2)
         colour = speedtocolour(speed)
         
         pygame.draw.line(screen, colour, (sx1,sy1), (sx2,sy2), 2)
 
-
-#draw a body
-def drawbody(body):
-    x = int(xcenter + (body.x * scale))
-    y = int(ycenter - (body.y * scale))
-    
-    radius = max(2, int(math.sqrt(body.mass) * scale))
-    pygame.draw.circle(screen, (255,255,255), (x,y), radius)
-    
 
 #draw simulation statistics
 def drawstats(bodies):
@@ -268,7 +274,7 @@ bodies = [body1, body2, body3]
 '''
 star = Body(0,0,0,0,1000)
 planet1 = circularorbit(75,0,10,star)
-planet2 = circularorbit(-150,0,50,star)
+planet2 = circularorbit(-125,0,50,star)
 bodies = [star, planet1, planet2]
 
 acceleration(bodies)
@@ -295,6 +301,47 @@ while running:
             if pausebutton.collidepoint(event.pos):
                 paused = not paused
        
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                drag = True
+                lastmousepos = event.pos
+                
+        if event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                drag = False
+                lastmousepos = None
+                
+        if event.type == pygame.MOUSEMOTION and drag:
+            mx,my = event.pos
+            lx,ly = lastmousepos
+            
+            dxpix = mx - lx
+            dypix = my - ly
+            
+            panx = panx - dxpix / (scale * zoom)
+            pany = pany + dypix / (scale * zoom)
+            
+            lastmousepos = (mx,my)
+                
+        if event.type == pygame.MOUSEWHEEL:
+            mx,my = pygame.mouse.get_pos()
+            
+            wxbef = (mx - xcenter) / (scale * zoom) + panx
+            wybef = (ycenter - my) / (scale * zoom) + pany
+            
+            if event.y > 0:
+                zoom = zoom * 1.1
+            elif event.y < 0:
+                zoom = zoom / 1.1
+                
+            zoom = max(0.1, min(zoom,10))
+            
+            wxaft = (mx - xcenter) / (scale * zoom) + panx
+            wyaft = (ycenter - my) / (scale * zoom) + pany
+            
+            panx = panx + wxbef - wxaft
+            pany = pany + wybef - wyaft
+            
     if not paused:        
         update(bodies, dt)
         bodies = collision(bodies)
