@@ -273,9 +273,13 @@ bodies = [star, planet1, planet2]
 
 acceleration(bodies)
    
+#simulation parameters   
 selectedmass = 20     
 dt = 0.2
 
+#pause button setup
+paused = False
+pausebutton = pygame.Rect(width - 140,10,120,30)
 
 #main simulation loop
 running = True
@@ -286,16 +290,22 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            
-    update(bodies, dt)
-    bodies = collision(bodies)
-    acceleration(bodies)
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if pausebutton.collidepoint(event.pos):
+                paused = not paused
+       
+    if not paused:        
+        update(bodies, dt)
+        bodies = collision(bodies)
+        acceleration(bodies)
     
-    #update trails
-    for body in bodies:
-        body.trail.append((body.x, body.y, body.vx, body.vy))
-        if len(body.trail) > 300:
-            body.trail.pop(0)
+    if not paused:
+        #update trails
+        for body in bodies:
+            body.trail.append((body.x, body.y, body.vx, body.vy))
+            if len(body.trail) > 300:
+                body.trail.pop(0)
     
     screen.fill((0,0,0))
     
@@ -308,9 +318,16 @@ while running:
     #draw statistics
     drawstats(bodies)    
     
+    #draw pause button
+    pygame.draw.rect(screen, (80,80,80), pausebutton)
+    label = "Resume" if paused else "Pause"
+    text = font.render(label, True, (255,255,255))
+    textrect = text.get_rect(center = pausebutton.center)
+    screen.blit(text, textrect)
+    
     #update display
     pygame.display.flip()
-    
+
 
 #quit Pygame
 pygame.quit()
